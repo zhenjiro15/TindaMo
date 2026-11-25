@@ -9,7 +9,7 @@
    ============================================================ */
 const APP_VER={
   name:'TindaMo',
-  ver:'1.0.0',                                          // <-- ITO ANG VERSION NG APP
+  ver:'1.0.1',                                          // <-- ITO ANG VERSION NG APP
   repo:'https://github.com/zhenjiro15/TindaMo',       // dito naka-upload ang mga app na ida-download
   api:'https://api.github.com/repos/zhenjiro15/TindaMo/releases/latest',
   raw:['https://raw.githubusercontent.com/zhenjiro15/TindaMo/main/version.json','https://raw.githubusercontent.com/zhenjiro15/TindaMo/master/version.json'],
