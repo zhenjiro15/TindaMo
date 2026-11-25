@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="tl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
+<title>TindaMo</title>
+<meta name="description" content="TindaMo: POS, inventory at utang para sa tindahan. Gumagana sa phone at laptop, kahit offline.">
+<meta name="theme-color" content="#FFC400">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<script>
+/* V23: kung may plugin (hal. FCM / push) na tumatawag ng Capacitor.registerPlugin pero wala ito, huwag mag-crash */
+(function(){var C=window.Capacitor;if(!C||typeof C.registerPlugin==='function')return;
+C.registerPlugin=function(n){var P=(C.Plugins||(C.Plugins={}));if(P[n])return P[n];
+var m=function(){return Promise.reject(new Error(n+' plugin is not available'))};
+return P[n]=new Proxy({},{get:function(_,k){return k==='then'?undefined:(k==='addListener'?function(){return Promise.resolve({remove:function(){}})}:m)}})}})();
+</script>
+<div id="splash" aria-hidden="true"><div class="sp-awn"></div><img src="icons/icon-192.png" alt="" width="96" height="96"><div class="sp-name">Tinda<b>Mo</b></div><div class="sp-bar"><i></i></div></div>
+<noscript style="display:block;padding:24px;font:16px sans-serif">Kailangan ng JavaScript para gumana ang TindaMo. I-on ito sa browser mo.</noscript>
+<div id="app"></div>
+<div id="modal" role="dialog" aria-modal="true"></div>
+<div id="scanner" role="dialog" aria-modal="true" aria-label="Barcode scanner"></div>
+<div id="toasts" aria-live="polite"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
+<script src="js/helpers.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/accounts.js"></script>
+<script src="js/state.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/cashier.js"></script>
+<script src="js/shell.js"></script>
+<script src="js/sell.js"></script>
+<script src="js/inventory.js"></script>
+<script src="js/utang.js"></script>
+<script src="js/sales.js"></script>
+<script src="js/sticker.js"></script>
+<script src="js/camera.js"></script>
+<script src="js/profile.js"></script>
+<script src="js/recent.js"></script>
+<script src="js/colorpick.js"></script>
+<script src="js/scanner.js"></script>
+<script src="js/reminders.js"></script>
+<script src="js/sync.js"></script>
+<script src="js/config.js"></script>
+<script src="js/cloud.js"></script>
+<script src="js/link.js"></script>
+<script src="js/inbox.js"></script>
+<script src="js/shop.js"></script>
+<script src="js/team.js"></script>
+<script src="js/version.js"></script>
+<script src="js/stock.js"></script>
+<script src="js/receipt.js"></script>
+<script src="js/events.js"></script>
+<script src="js/native.js"></script>
+<script src="js/versions/v1.0.0.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
+

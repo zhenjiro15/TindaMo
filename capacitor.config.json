@@ -1,0 +1,18 @@
+{
+  "appId": "com.tindamo.app",
+  "appName": "TindaMo",
+  "webDir": "www",
+  "backgroundColor": "#EFF2F6",
+  "android": {
+    "allowMixedContent": false
+  },
+  "plugins": {
+    "SystemBars": {
+      "insetsHandling": "css"
+    },
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_tindamo",
+      "iconColor": "#FFC400"
+    }
+  }
+}

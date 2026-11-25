@@ -1,0 +1,38 @@
+{
+  "name": "tindamo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "TindaMo: POS, inventory at utang para sa tindahan (website)",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "npx --yes serve . -l 5500",
+    "build": "node scripts/build-web.mjs",
+    "android:check": "node scripts/check.mjs",
+    "android:setup": "node scripts/android-setup.mjs",
+    "android:sync": "node scripts/build-web.mjs && cap sync android",
+    "android:open": "cap open android",
+    "android:run": "node scripts/build-web.mjs && cap sync android && cap run android",
+    "android:apk": "node scripts/apk.mjs",
+    "android:sha1": "node scripts/sha1.mjs"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.0.0",
+    "@capacitor/app": "^8.0.0",
+    "@capacitor/camera": "^8.0.0",
+    "@capacitor/core": "^8.0.0",
+    "@capacitor/filesystem": "^8.0.0",
+    "@capacitor/geolocation": "^8.0.0",
+    "@capacitor/local-notifications": "^8.0.0",
+    "@capacitor/share": "^8.0.0",
+    "@capgo/capacitor-social-login": "^8.0.0",
+    "@fontsource/bricolage-grotesque": "^5.0.0",
+    "@fontsource/inter": "^5.0.0",
+    "@zxing/library": "0.21.3"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^8.0.0"
+  }
+}

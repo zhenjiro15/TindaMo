@@ -1,0 +1,12 @@
+name = "tindamo-ai"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+[ai]
+binding = "AI"
+[vars]
+FIREBASE_API_KEY = "AIzaSyBMQ7_5_olkPtZiTpww8WUiJDhPJ_mPG04"
+MODEL = "claude-haiku-5-5"
+DAILY_LIMIT = "60"
+# [[kv_namespaces]]  # opsyonal: limit bawat araw
+# binding = "KV"
+# id = "<kv-id>"

@@ -1,0 +1,180 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---- Admin ng app: ang owner (Gmail sa baba) at ang mga nasa /admins ----
+    // Kailangang VERIFIED ang email (Google sign-in = verified agad) para hindi maloko ng ibang taong gumamit ng Gmail na ito.
+    function signedIn() { return request.auth != null; }
+    function verified() { return signedIn() && request.auth.token.email_verified == true; }
+    function isOwner() { return verified() && request.auth.token.email == 'zhenjiro15@gmail.com'; }
+    function isAdmin() {
+      return isOwner() || (verified() && exists(/databases/$(database)/documents/admins/$(request.auth.token.email)));
+    }
+
+    // Ang bawat account ay may access lang sa sarili niyang data.
+    match /users/{uid}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+      // V1.2.1: ang Dev (Owner) lang ang pwedeng magbura ng data ng ibang user
+      allow delete: if isOwner();
+    }
+
+    // Online / offline: ang user ang nagsusulat ng sarili niya, admin ang nagbabasa ng lahat. (Walang password dito, kailanman.)
+    match /presence/{uid} {
+      allow create, update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['email', 'store', 'ts', 'via'])
+        && request.resource.data.email.size() <= 120 && request.resource.data.store.size() <= 80;
+      allow delete: if (signedIn() && request.auth.uid == uid) || isAdmin();
+      allow read: if isAdmin();
+    }
+
+    // Message: usapan ng user at admin
+    match /threads/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow create, update: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow delete: if isAdmin();
+      match /msgs/{mid} {
+        allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+        allow create: if (signedIn() && request.auth.uid == uid
+            && request.resource.data.from in ['user', 'bot'] && request.resource.data.text.size() <= 500
+            && (!('img' in request.resource.data) || request.resource.data.img.size() <= 450000))
+          || (isAdmin() && (!('img' in request.resource.data) || request.resource.data.img.size() <= 450000));
+        // V1.2.1: ang user ay pwedeng mag-edit ng sariling mensahe (text, ed) at mag-react (rU). Ang admin ay lahat.
+        // V1.2.3: pwede ring i-delete ng user ang sarili niyang mensahe ('del' = "Deleted Message"; nililinis ang text, img, rt)
+        allow update: if isAdmin()
+          || (signedIn() && request.auth.uid == uid
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text', 'ed', 'rU', 'del', 'img', 'rt'])
+              && request.resource.data.text.size() <= 500
+              && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['text', 'ed', 'del', 'img', 'rt']) || resource.data.from == 'user'));
+        allow delete: if isAdmin();
+      }
+    }
+
+    // Listahan ng admin: ang owner lang ang nagdadagdag/nag-aalis; puwedeng tingnan ng user ang sarili niyang email lang.
+    match /admins/{e} {
+      allow get: if signedIn() && request.auth.token.email == e;
+      allow list, create, update, delete: if isOwner();
+    }
+
+    // ---- V1.1.3: VIP. Ang admin/owner ang nagbibigay (sumusulat); ang user ay nababasa lang ang sarili niyang email ----
+    match /vips/{e} {
+      allow get: if signedIn() && request.auth.token.email == e;
+      allow list: if isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ---- V1.1.7: BAN / BLOCK. Admin/owner lang ang sumusulat; ang user ay nababasa lang ang sarili niyang email.
+    // Hindi pwedeng i-ban ang owner. Ang Admin ay Owner lang ang pwedeng mag-ban. ----
+    match /bans/{e} {
+      allow get: if signedIn() && request.auth.token.email == e;
+      allow list: if isAdmin();
+      allow create, update: if isAdmin() && e != 'zhenjiro15@gmail.com'
+        && (isOwner() || !exists(/databases/$(database)/documents/admins/$(e)));
+      allow delete: if isAdmin();
+    }
+
+    // ---- V1.1.9: BINURA NG ADMIN. Admin/owner ang naglalagay; ang user ang nakakabasa ng sarili niya at nagbubura nito pagkatapos mabura ang account sa phone niya.
+    // Hindi pwedeng burahin ang owner. Ang Admin ay Owner lang ang pwedeng magbura. ----
+    match /deleted/{e} {
+      allow get: if signedIn() && request.auth.token.email == e;
+      allow list: if isAdmin();
+      allow create, update: if isOwner() && e != 'zhenjiro15@gmail.com';   // V1.2.1: Dev lang
+      allow delete: if isOwner() || (signedIn() && request.auth.token.email == e);
+    }
+
+    // ---- V1.2.1: PROFILE PHOTO. Ang may-ari ang sumusulat (maliit na larawan lang); ang lahat ng naka-login ay nakakabasa. ----
+    match /avatars/{uid} {
+      allow read: if signedIn();
+      allow create, update: if signedIn() && request.auth.uid == uid && request.resource.data.d.size() <= 40000;
+      allow delete: if (signedIn() && request.auth.uid == uid) || isOwner();
+    }
+
+    // ---- V1.2.1: CONFIG (presyo ng VIP). Lahat ng naka-login ay nakakabasa; ang Admin/Owner lang ang nagbabago. ----
+    match /config/{id} {
+      allow read: if signedIn();
+      allow create, update: if isAdmin() && id == 'vip' && request.resource.data.price is int
+        && request.resource.data.price >= 1 && request.resource.data.price <= 100000;
+      allow delete: if isOwner();
+    }
+
+    // ---- V1.2.3: SYNC GAMIT ANG CODE. Ang nagpapadala ang gumagawa sa /inbox/{uid ng tatanggap}/xfer/{id} (st 'u' = ina-upload pa,
+    // tapos 'p' = handa na). Ang tatanggap ang nakakabasa at sumasagot (st 'a' = Accept, 'd' = Decline). Ang parehong panig ay pwedeng magbura. ----
+    match /inbox/{ruid}/xfer/{id} {
+      allow create: if signedIn() && request.resource.data.fu == request.auth.uid && request.auth.uid != ruid
+        && request.resource.data.keys().hasOnly(['fu', 'fe', 'fs', 'ts', 'n', 'st'])
+        && request.resource.data.st == 'u' && request.resource.data.n is int && request.resource.data.n <= 30
+        && request.resource.data.fe.size() <= 120 && request.resource.data.fs.size() <= 80;
+      allow read: if signedIn() && (request.auth.uid == ruid || resource.data.fu == request.auth.uid);
+      allow update: if signedIn() && (
+          (resource.data.fu == request.auth.uid && resource.data.st == 'u' && request.resource.data.st == 'p'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['st']))
+          || (request.auth.uid == ruid && resource.data.st == 'p' && request.resource.data.st in ['a', 'd']
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['st'])));
+      allow delete: if signedIn() && (request.auth.uid == ruid || resource.data.fu == request.auth.uid);
+
+      match /parts/{i} {
+        allow create, update: if signedIn() && get(/databases/$(database)/documents/inbox/$(ruid)/xfer/$(id)).data.fu == request.auth.uid
+          && get(/databases/$(database)/documents/inbox/$(ruid)/xfer/$(id)).data.st == 'u'
+          && request.resource.data.d.size() <= 260000;
+        allow read: if signedIn() && (request.auth.uid == ruid
+          || get(/databases/$(database)/documents/inbox/$(ruid)/xfer/$(id)).data.fu == request.auth.uid);
+        allow delete: if signedIn() && (request.auth.uid == ruid
+          || get(/databases/$(database)/documents/inbox/$(ruid)/xfer/$(id)).data.fu == request.auth.uid);
+      }
+    }
+
+    // ---- V1.1.7: REPORTS. Ang user ang gumagawa; admin/owner ang nagbabasa, nagmamarka at nagbubura. ----
+    match /reports/{id} {
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid', 'email', 'store', 'cat', 'text', 'target', 'ts', 'st', 'av'])
+        && request.resource.data.text.size() <= 500 && request.resource.data.st == 'new';
+      allow read, update, delete: if isAdmin();
+    }
+
+    // ---- V26: LIVE NA TINDAHAN (may-ari + mga cashier) ----
+    // Ang cashier ay gumagawa ng sariling (nakatagong) account; kailangan munang tanggapin ng may-ari (members) bago siya makabasa ng tindahan.
+    function isMember(o) { return signedIn() && exists(/databases/$(database)/documents/shops/$(o)/members/$(request.auth.uid)); }
+    function isShopOwner(o) { return signedIn() && request.auth.uid == o; }
+
+    // Code ng tindahan -> uid ng may-ari (para mahanap ng cashier ang tindahan gamit ang code)
+    match /codes/{c} {
+      allow read: if signedIn();
+      allow create, update: if signedIn() && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid', 'w', 's', 'ts'])
+        && (resource == null || resource.data.uid == request.auth.uid);
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+    }
+
+    match /shops/{o} {
+      allow read: if isShopOwner(o) || isMember(o);
+      allow write: if isShopOwner(o);
+
+      // kasalukuyang tindahan (items, benta, utang) na isinusulat ng may-ari
+      match /state/{i} { allow read: if isShopOwner(o) || isMember(o); allow write: if isShopOwner(o); }
+      match /img/{i}   { allow read: if isShopOwner(o) || isMember(o); allow write: if isShopOwner(o); }
+
+      // mga tinanggap na cashier
+      match /members/{m} {
+        allow read: if isShopOwner(o) || (signedIn() && request.auth.uid == m);
+        allow write: if isShopOwner(o);
+        // V1.2.8: ang cashier ay pwedeng magbura ng sarili niyang membership (Leave). Kung hindi na-publish ang rules na ito, ang may-ari ang magbubura nito kapag nakita niyang umalis ang cashier.
+        allow delete: if signedIn() && request.auth.uid == m;
+      }
+
+      // hiling na sumali: ang cashier ang gumagawa (kailangan ang tamang code), ang may-ari ang sumasagot
+      match /requests/{m} {
+        allow create: if signedIn() && request.auth.uid == m
+          && request.resource.data.keys().hasOnly(['name', 'ts', 'code', 'st'])
+          && request.resource.data.st == 'p' && request.resource.data.name.size() <= 40
+          && request.resource.data.code == get(/databases/$(database)/documents/shops/$(o)).data.code;
+        allow read, delete: if isShopOwner(o) || (signedIn() && request.auth.uid == m);
+        allow update: if isShopOwner(o);
+      }
+
+      // ipinapadala ng cashier sa may-ari (benta, utang, lokasyon, online)
+      match /box/{m} {
+        allow read, write: if isShopOwner(o) || (signedIn() && request.auth.uid == m && isMember(o));
+        match /p/{i} { allow read, write: if isShopOwner(o) || (signedIn() && request.auth.uid == m && isMember(o)); }
+      }
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "TindaMo",
+  "version": "1.0.0",
+  "min": "1.0.0",
+  "url": "https://tindamo.app",
+  "repo": "https://github.com/zhenjiro15/TindaMo",
+  "notes": "- Website na ang TindaMo: buksan lang sa browser (phone o laptop). Walang Windows installer.\n- Ang lahat ng dating bersyon (1.0.0 hanggang 1.2.8) ay isinama na sa **1.0.0**. Dito na ulit nagsisimula ang bilang.\n- Pindutin ang **I-update** para i-refresh ang website kapag may bago."
+}
