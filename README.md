@@ -20,7 +20,7 @@ This is the beginning of a smarter way to manage your store, track sales, organi
 - **App:** Tinda Mo
 - **Version:** 1.0.0
 - **Release Type:** Initial Official Release
-- **Platform:** Android & Windows
+- **Platform:** Android & Website
 
 ---
 
