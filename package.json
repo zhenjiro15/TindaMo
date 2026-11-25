@@ -1,6 +1,6 @@
 {
   "name": "tindamo",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "private": true,
   "description": "TindaMo: POS, inventory at utang para sa tindahan (website)",
   "engines": {
